@@ -1,5 +1,5 @@
 # Webcal
-Simple calender app made with Ruby
+Simple calendar app made with Ruby
 
 ## Run
 ```sh
