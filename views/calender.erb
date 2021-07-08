@@ -1,0 +1,28 @@
+<table><%= params[:month] %></table>
+
+<script>
+function showBirth(y, m, d){
+  M.toast({html: 'I am a toast!'})
+}
+</script>
+<% @days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] %>
+<table border="1">
+    <tr>
+        <%= @days.map {|day| "<td>" + day + "</td>"}.join("") %>
+    </tr>
+    <%= i = calc(@year, @month, 1) %>
+    <tr>
+    <% i.times do%><td></td><% end %>
+    <%
+    count = 1
+    while count <= lastDay(@month) do
+        %><td class="<%= colorGudge(@year, @month, count) %>"><a onclick="() => showBirth(1, 1, 1)"><%= count %></a></td><%
+        count += 1
+        i += 1
+        if(i >= 7)
+            %></tr><tr><%
+            i = 0
+        end
+    end
+    %>
+</table>
