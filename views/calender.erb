@@ -39,7 +39,7 @@ tNow = Time.new
     count = 1
     while count <= lastDay(@month) do
         eventsCount =  Events.where("date = \"#{Time.local(@year, @month, count).strftime("%Y-%m-%d")}\"" ).size
-        %><td><a class="<%if eventsCount > 0 then %>btn-floating red<%end%> center <%= colorGudge(@year, @month, count) %>" href="<%= "/#{@year}/#{@month}/#{count}" %>"><span class="center"><%= count %></span></a></td>
+        %><td><a class="<%if eventsCount > 0 || @googleEvents.items.find{|event| (event.start.date || event.start.date_time).to_s == Time.local(@year, @month, count).strftime("%Y-%m-%d")} != nil then %>btn-floating red<%end%> center <%= colorGudge(@year, @month, count) %>" href="<%= "/#{@year}/#{@month}/#{count}" %>"><span class="center"><%= count %></span></a></td>
         <%
         count += 1
         i += 1
@@ -68,7 +68,7 @@ tNow = Time.new
     <%end%>
 </div>
 <div class="col m6 s12">
-    <h4>Google Calendar</h4>
+    <h4><%= @googleEvents.summary %></h4>
     <%if @googleEvents.items.length > 0%>
     <table>
     <%@googleEvents.items.each do |event| %>

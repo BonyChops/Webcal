@@ -6,11 +6,16 @@ require "googleauth"
 require "googleauth/stores/file_token_store"
 require "date"
 require "fileutils"
+require 'net/http'
+require 'uri'
+require 'json'
+
 use Rack::MethodOverride
 set :environment, :production
-ActiveRecord::Base.configurations = YAML. load_file ('database.yml')
+ActiveRecord::Base.configurations = YAML.load_file('database.yml')
 ActiveRecord::Base.establish_connection :development
-
+DISCORD_URI = YAML.load_file('discord_token.yml')["discord_uri"]
+CALENDAR_ID = YAML.load_file('google_calendar.yml')["token"]["calendar_id"]
 
 OOB_URI = "urn:ietf:wg:oauth:2.0:oob".freeze
 APPLICATION_NAME = "Google Calendar API Ruby Quickstart".freeze
@@ -51,8 +56,7 @@ service.client_options.application_name = APPLICATION_NAME
 service.authorization = authorize
 
 # Fetch the next 10 events for the user
-calendar_id = "nnct-info@nagano-nct.ac.jp"
-response = service.list_events(calendar_id,
+response = service.list_events(CALENDAR_ID,
                                max_results:   10,
                                single_events: true,
                                order_by:      "startTime",
@@ -112,7 +116,7 @@ get "/" do
     @year = t.year
     @month = t.month
     @events = Events.where("date BETWEEN \"#{Time.local(@year, @month, 1).strftime("%Y-%m-%d")}\" AND \"#{Time.local(@year, @month, lastDay(@month)).strftime("%Y-%m-%d")}}\"" )
-    @googleEvents = service.list_events(calendar_id,
+    @googleEvents = service.list_events(CALENDAR_ID,
         max_results:   10,
         single_events: true,
         order_by:      "startTime",
@@ -125,12 +129,12 @@ get "/:year/:month" do
     @year = params[:year].to_i
     @month = params[:month].to_i
     @events = Events.where("date BETWEEN \"#{Time.local(@year, @month, 1).strftime("%Y-%m-%d")}\" AND \"#{Time.local(@year, @month, lastDay(@month)).strftime("%Y-%m-%d")}}\"" )
-    @googleEvents = service.list_events(calendar_id,
+    @googleEvents = service.list_events(CALENDAR_ID,
         max_results:   10,
         single_events: true,
         order_by:      "startTime",
         time_min:      Time.local(@year, @month, 1).rfc3339,
-        time_max:      (Time.local(@year, @month + 1, 1) - 1).rfc3339)
+        time_max:      (Time.local(@year, @month, 1) + (lastDay(@month) * 24 * 60 * 60)- 1).rfc3339)
     erb :calender
 end
 
@@ -139,6 +143,12 @@ get "/:year/:month/:day" do
     @month = params[:month].to_i
     @day = params[:day].to_i
     @events = Events.where("date = \"#{Time.local(@year, @month, @day).strftime("%Y-%m-%d")}\"" )
+    @googleEvents = service.list_events(CALENDAR_ID,
+        max_results:   10,
+        single_events: true,
+        order_by:      "startTime",
+        time_min:      Time.local(@year, @month, @day).rfc3339,
+        time_max:      (Time.local(@year, @month, @day) + (24 * 60 * 60) - 1).rfc3339)
     puts Time.local(@year, @month, @day).strftime("%Y-%m-%d")
     erb :event
 end
@@ -155,6 +165,44 @@ post "/:year/:month/:day/new" do
     e.save
     redirect "/#{@year}/#{@month}/#{@day}?saved"
 end
+
+post "/:year/:month/:day/:id/notify" do
+    puts DISCORD_URI
+    e = Events.find(params[:id])
+    @year = params[:year].to_i
+    @month = params[:month].to_i
+    @day = params[:day].to_i
+    uri = URI.parse(DISCORD_URI)
+    req = Net::HTTP::Post.new(uri, 'Content-Type' => 'application/json')
+    post_data = {
+        "content": "イベントをご確認ください",
+    "embeds": [
+    {
+      "title": e.title,
+      "description": e.description,
+      "fields": [
+        {
+          "name": "日付",
+          "value": e.date,
+          "inline":true
+        }
+      ]
+    }
+  ]
+    }.to_json
+    req.body = post_data
+
+    req_options = {
+    use_ssl: uri.scheme == "https"
+    }
+
+    response = Net::HTTP.start(uri.hostname, uri.port, req_options) do |http|
+        http.request(req)
+    end
+    puts response.body
+    redirect "/#{@year}/#{@month}/#{@day}?notify_sent"
+end
+
 
 delete "/:year/:month/:day/:id" do
     e = Events.find(params[:id])

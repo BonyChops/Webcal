@@ -1,6 +1,7 @@
 *.db
 token.yaml
-google_calandar.yml
+discord_token.yml
+google_calendar.yml
 credentials.json
 *.gem
 *.rbc
