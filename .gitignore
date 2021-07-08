@@ -1,3 +1,7 @@
+*.db
+token.yaml
+google_calandar.yml
+credentials.json
 *.gem
 *.rbc
 /.config

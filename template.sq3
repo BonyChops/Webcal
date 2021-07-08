@@ -1,0 +1,6 @@
+create table events(
+    id char (10) primary key,
+    title varchar(256),
+    description varchar(40),
+    date DATE
+);

@@ -1,0 +1,87 @@
+<%
+diff = Time.local(@year, 7, 30) - Time.local(@year, @month, @day)
+if diff < 0
+    diff = Time.local(@year + 1, 7, 30) - Time.local(@year, @month, @day)
+end
+@days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+%>
+
+<a class="waves-effect waves-light btn-flat" href="/<%=@year%>/<%=@month%>"><i class="material-icons left">keyboard_arrow_left</i>戻る</a>
+<h3><%if  (diff / (24 * 60 * 60)).floor <= 0%><i class="material-icons medium left #f57f17 amber-text darken-4">cake</i><%end%><%= @year %>年 <%= @month %>月 <%= @day %>月 (<%=@days[Time.local(@year, @month, @day).wday]%>)</h3>
+<br>
+<div class="row">
+<div class="col s12 m6">
+<h4>今日の予定</h4>
+<%if @events.size > 0%>
+<table>
+    <tbody>
+        <%@events.each do |event| %>
+            <tr>
+            <td><%= event.title %></td>
+            <td><%= event.description %></td>
+            <form action="<%=@day%>/<%=event.id%>" method="POST">
+            <td><button type="submit" class="btn-flat waves-effect waves-light"><i class="material-icons grey-text">delete</i></button></td>
+            <input type="hidden" name="_method" value="DELETE">
+            </form>
+            </tr>
+        <% end %>
+    </tbody>
+</table>
+<%else%>
+予定はありません．
+<%end%>
+<br>
+<br>
+<a class="btn-floating btn waves-effect waves-light red modal-trigger" href="#newevent">
+    <i class="material-icons">add</i>
+</a>
+<div id="newevent" class="modal">
+    <form action="<%=@day%>/new" method="POST">
+        <div class="modal-content">
+            <div class="row">
+                <div class="col s8 offset-s2">
+                    <h3>予定を追加</h3>
+                    <div class="input-field">
+                        <input id="title" name="title" type="text" class="validate">
+                        <label for="title">件名</label>
+                    </div>
+                    <div class="input-field">
+                        <textarea id="description" name="description" class="materialize-textarea"></textarea>
+                        <label for="description">内容</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <a href="#!" class="modal-close waves-effect waves-green btn-flat">キャンセル</a>
+            <button class="btn-floating btn waves-effect waves-light red" type="submit">
+                <i class="material-icons">add</i>
+            </button>
+        </div>
+    </form>
+</div>
+
+</div>
+
+<div class="col s12 m6">
+<h4>Google Calendar</h4>
+予定はありません．
+</div>
+
+
+
+</div>
+<br>
+<br>
+<% if (diff / (24 * 60 * 60)).floor > 0%>
+<p><i class="material-icons left">cake</i>Bony_Chopsの爆誕祭まであと<%= (diff / (24 * 60 * 60)).floor%>日！</p>
+<%else%>
+<p class=""><i class="material-icons left #f57f17 amber-text darken-4">celebration</i>Bony_Chops爆誕祭です(<%= ((Time.local(@year, @month, @day) - Time.local(2002, @month, @day)) / (365 * 24 * 60 * 60)).floor%>歳)！🥳</p>
+<%end%>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var elems = document.querySelectorAll('.modal');
+    var instances = M.Modal.init(elems);
+  });
+</script>
